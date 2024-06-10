@@ -44,14 +44,14 @@ def scrape_and_concat(base_url: str, first_segment: int, extension: str, last_se
 
     # Download segments using wget
     try:
-        subprocess.run(["wget",  "-i", str(segment_txt_path), "-P", str(vid_dir)], check=True)
+        subprocess.run(["wget", "-i", str(segment_txt_path), "-P", str(vid_dir)], check=True)
     except subprocess.CalledProcessError as e:
         print(f"Error downloading segments: {e}")
         return
 
-     # Define a function to extract the numeric part from the file name
+    # Define a function to extract the numeric part from the file name
     def extract_segment_number(filename):
-        match = regex.search(r'seg-(\d+)-v1-a1\.ts', filename)
+        match = regex.search(r'seg-(\d+)-v1-a1\.ts(?:\?.*)?$', filename)
         return int(match.group(1)) if match else -1
 
     # Write downloaded segment files to input.txt for ffmpeg
@@ -59,20 +59,13 @@ def scrape_and_concat(base_url: str, first_segment: int, extension: str, last_se
     with input_txt_path.open("w") as f:
         # Get the sorted list of segment files
         segments = sorted(
-            [file for file in vid_dir.iterdir() if file.suffix == ".ts"],
+            [file for file in vid_dir.iterdir() if ".ts" in file.name],
             key=lambda filename: extract_segment_number(filename.name)
         )
         # Write segment files to input.txt
         for segment in segments:
             f.write(f"file '{segment.name}'\n")
             print(f"Added to input.txt: {segment.name}")  # Debugging: Print added segments
-
-    # Write downloaded segment files to input.txt for ffmpeg
-    # input_txt_path = vid_dir / "input.txt"
-    # with input_txt_path.open("w") as f:
-    #     for i in range(first_segment, last_segment + 1):
-    #         f.write(f"file 'seg-{i}-v1-a1.ts'\n")
-    #         print(f"Added to input.txt: seg-{i}-v1-a1.ts")  # Debugging: Print added segments
 
     output_vid = vid_dir / "output.mp4"
 
